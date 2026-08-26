@@ -1,0 +1,31 @@
+перед деплоем скопируй данный из никнеймс к папку с ботом
+
+Установка: pip install -r requirements-dev.txt
+
+
+
+Как запустить тесты
+Установите зависимости для разработки:
+
+bash
+pip install pytest pytest-mock
+
+Запустите тесты из корневой папки проекта:
+
+bash
+pytest
+
+Для проверки покрытия:
+
+bash
+pytest --cov=. --cov-report=html
+
+Как запустить обновлённые тесты
+Убедитесь, что установлены pytest и pytest-mock:
+
+bash
+pip install pytest pytest-mock
+Запустите из корня проекта:
+
+bash
+pytest
