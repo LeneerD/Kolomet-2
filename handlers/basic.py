@@ -36,18 +36,21 @@ def roll_table(table_name):
     return result, None, None
 
 def roll_spark(number=None):
+    """Возвращает (число, описание) или (None, сообщение_об_ошибке)."""
     spark = tables_data.get("spark", {})
     if not spark:
-        return None, "Таблица Spark не загружена.", None
+        return None, "Таблица Spark не загружена."
     if number is not None:
         key = str(number)
         if key in spark:
-            return number, spark[key], None
+            return number, spark[key]
         else:
-            return None, f"Запись {number} не найдена", None
+            return None, f"Запись {number} не найдена"
     max_key = tables_data.get("spark_max_key", 0)
-    roll = random.randint(1, max_key) if max_key else 0
-    return roll, spark.get(str(roll), "Описание отсутствует"), None
+    if max_key == 0:
+        return None, "В таблице Spark нет записей."
+    roll = random.randint(1, max_key)
+    return roll, spark.get(str(roll), "Описание отсутствует")
 
 def roll_exploration(category, num_dice=None, modifier=0, direct_value=None):
     exp_tables = tables_data.get("exploration_tables", {})
