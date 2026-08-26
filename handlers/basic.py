@@ -181,6 +181,7 @@ def handle_dis(mention, args, comment):
         return f"Ошибка: {error}", None, None
     return f"Бросок с помехой: {result}", details, None
 
+
 def handle_ping(mention, args, comment):
     return "Pong! Бот работает.", None, None
 
