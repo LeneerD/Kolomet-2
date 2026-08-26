@@ -46,11 +46,14 @@ def parse_single_component(comp):
             rest = comp[len(kw):]
             roll1, roll2 = random.randint(1, 20), random.randint(1, 20)
             result = max(roll1, roll2) if adv_dis_map[kw] == 1 else min(roll1, roll2)
-            # Используем скомпилированное регулярное выражение
             mods = RE_MODS.findall(rest)
             for mod in mods:
                 result += int(mod)
-            return result, None, None
+            # Формируем детали: показываем оба кубика и модификаторы
+            details = f"{roll1}, {roll2}"
+            if mods:
+                details += " " + " ".join(mods)
+            return result, None, details
 
     if 'd' not in comp:
         try:
