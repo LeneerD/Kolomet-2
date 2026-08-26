@@ -1,14 +1,14 @@
 import pytest
-import sqlite3
-from db import get_connection, init_db, save_alias, get_alias, delete_alias, create_character, get_user_characters
+import db
+from db import save_alias, get_alias, delete_alias, create_character, get_user_characters, get_user_aliases
 
 @pytest.fixture
-def db_connection(monkeypatch):
-    """Подменяет DB_PATH на временную БД в памяти."""
-    monkeypatch.setattr('config.DB_PATH', ':memory:')
-    init_db()
+def db_connection(monkeypatch, tmp_path):
+    db_file = tmp_path / "test.db"
+    monkeypatch.setattr(db, 'DB_PATH', str(db_file))
+    db.init_db()  # теперь создаст таблицы в новом пути
     yield
-    # База в памяти удаляется автоматически после закрытия соединений
+    # после теста файл удалится автоматически
 
 class TestDB:
     def test_save_and_get_alias(self, db_connection):
@@ -16,7 +16,6 @@ class TestDB:
         result = get_alias(123, "myroll")
         assert result == "2d6+3"
 
-        # Несуществующий алиас
         result = get_alias(123, "unknown")
         assert result is None
 

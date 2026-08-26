@@ -1,6 +1,7 @@
 import json
 import logging
 import random
+import time
 import vk_api
 from config import GROUP_ID, NICKNAMES_FILE
 
@@ -9,7 +10,8 @@ logger = logging.getLogger(__name__)
 vk = None
 longpoll = None
 nicknames = {}
-user_cache = {}
+user_cache = {}  # user_id -> (timestamp, name)
+CACHE_TTL = 3600  # 1 час
 
 def init_vk(token):
     global vk, longpoll
@@ -33,23 +35,37 @@ def save_nicknames(data):
         logger.error(f"Ошибка сохранения nicknames.json: {e}")
 
 def reload_nicknames():
-    """Перезагружает кастомные имена из файла."""
     global nicknames
     nicknames = load_nicknames()
+    # Очищаем кеш, чтобы при следующем запросе использовались новые имена
+    user_cache.clear()
     return nicknames
 
 def get_user_name(user_id):
     global nicknames
     user_id_str = str(user_id)
+    # 1. Кастомное имя из nicknames.json
     if user_id_str in nicknames:
         return nicknames[user_id_str]
-    if user_id not in user_cache:
-        try:
-            user = vk.users.get(user_ids=user_id, fields=[])[0]
-            user_cache[user_id] = user['first_name']
-        except:
-            user_cache[user_id] = f"Пользователь {user_id}"
-    return user_cache[user_id]
+
+    # 2. Проверяем кеш с TTL
+    now = time.time()
+    if user_id in user_cache:
+        timestamp, name = user_cache[user_id]
+        if now - timestamp < CACHE_TTL:
+            return name
+
+    # 3. Запрос к VK API
+    try:
+        user = vk.users.get(user_ids=user_id, fields=[])[0]
+        name = user['first_name']
+    except Exception as e:
+        logger.error(f"Ошибка получения имени для {user_id}: {e}")
+        name = f"Пользователь {user_id}"
+
+    # Сохраняем в кеш
+    user_cache[user_id] = (now, name)
+    return name
 
 def mention_user(user_id, peer_id):
     if peer_id != user_id:
@@ -67,4 +83,5 @@ def send_message(user_id, message, peer_id=None):
     except Exception as e:
         logger.error(f"Ошибка отправки: {e}")
 
+# Загружаем никнеймы при старте
 nicknames = load_nicknames()

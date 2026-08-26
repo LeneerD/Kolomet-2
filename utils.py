@@ -1,17 +1,19 @@
 import logging
 import json
-from config import OWNER_ID, TESTERS_FILE
+import time
+import config
 from vk_utils import vk
 
 logger = logging.getLogger(__name__)
 
-donor_cache = {}
-_testers = []  # кешированный список
+donor_cache = {}  # user_id_str -> (timestamp, is_donor)
+_testers = []     # кешированный список тестеров
+CACHE_TTL = 3600  # 1 час
 
 def load_testers():
     global _testers
     try:
-        with open(TESTERS_FILE, 'r', encoding='utf-8') as f:
+        with open(config.TESTERS_FILE, 'r', encoding='utf-8') as f:
             data = json.load(f)
             _testers = data.get("testers", [])
     except (FileNotFoundError, json.JSONDecodeError, IOError):
@@ -21,25 +23,33 @@ def load_testers():
 def reload_testers():
     return load_testers()
 
-# Загружаем при старте
 load_testers()
 
 def is_donor(user_id):
-    if OWNER_ID is not None and user_id == OWNER_ID:
+    # 1. Владелец всегда донатер
+    if config.OWNER_ID is not None and user_id == config.OWNER_ID:
         return True
 
+    # 2. Тестировщики
     if user_id in _testers:
         return True
 
+    # 3. Проверяем кеш с TTL
     user_id_str = str(user_id)
+    now = time.time()
     if user_id_str in donor_cache:
-        return donor_cache[user_id_str]
+        timestamp, result = donor_cache[user_id_str]
+        if now - timestamp < CACHE_TTL:
+            return result
+
+    # 4. Запрос к VK Donut API
     try:
         response = vk.method('donut.isDon', {'user_id': user_id})
-        donor_cache[user_id_str] = response
+        donor_cache[user_id_str] = (now, response)
         return response
     except Exception as e:
         logger.error(f"Ошибка проверки доната для {user_id}: {e}")
+        donor_cache[user_id_str] = (now, False)
         return False
 
 def premium_only(func):

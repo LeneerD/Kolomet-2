@@ -32,3 +32,5 @@ TABLE_FILES = {
 TESTERS_FILE = os.path.join(DATA_DIR, "testers.json")
 NICKNAMES_FILE = os.path.join(DATA_DIR, "nicknames.json")
 DB_PATH = os.path.join(DATA_DIR, "bot_data.db")
+
+CACHE_TTL = 3600  # время жизни кеша в секундах (1 час)
