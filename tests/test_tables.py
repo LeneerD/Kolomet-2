@@ -51,21 +51,27 @@ class TestTables:
         assert error == "Таблицы навыков не загружены."
 
     def test_roll_spark_by_number(self, mock_tables):
-        roll, result, _ = roll_spark(5)
+        roll, result = roll_spark(5)
         assert roll == 5
         assert result == "Spark 5"
 
     def test_roll_spark_random(self, mock_tables, mocker):
-        # Подменяем random.randint, чтобы всегда возвращать 1 (существующий ключ)
         mocker.patch('random.randint', return_value=1)
-        roll, result, _ = roll_spark()
+        roll, result = roll_spark()
         assert roll == 1
         assert result == "Spark 1"
 
     def test_roll_spark_not_found(self, mock_tables):
-        roll, result, _ = roll_spark(999)
+        roll, result = roll_spark(999)
         assert roll is None
         assert result == "Запись 999 не найдена"
+
+    def test_roll_spark_empty_table(self, mock_tables, mocker):
+        # Проверяем, что если таблица пуста, возвращается ошибка
+        mocker.patch('handlers.basic.tables_data', {'spark': {}})
+        roll, result = roll_spark()
+        assert roll is None
+        assert "Таблица Spark не загружена" in result
 
     def test_roll_exploration_direct(self, mock_tables):
         result, error, _ = roll_exploration("common", direct_value=4)
